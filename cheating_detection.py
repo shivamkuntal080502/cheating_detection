@@ -6,24 +6,18 @@ import numpy as np
 import time
 import pyttsx3
 import csv
-
-# ── Initial Setup ──
+#Initial Setup
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
 mp_face_mesh = mp.solutions.face_mesh
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
-
-# Enable iris landmarks and multiple faces
 face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True, max_num_faces=5)
 hands_detector = mp_hands.Hands(min_detection_confidence=0.5, max_num_hands=1)
-
 engine = pyttsx3.init()
 engine.setProperty('rate', 150)
-
-# ── Logging Setup ──
+#Logging Setup 
 OUTPUT_DIR = r"C:\Users\ASUS\Desktop\opencv\logs"
 if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
 log_path = os.path.join(OUTPUT_DIR, "events_log.csv")
@@ -32,8 +26,7 @@ if not os.path.exists(log_path):
         csv.writer(f).writerow(["timestamp","event_type","description","image_path"])
     try: os.chmod(log_path, 0o666)
     except: pass
-
-# Thresholds & indices
+#Thresholds & indices
 LEFT_IRIS = list(range(474, 478))
 LEFT_INNER = 133
 LEFT_OUTER = 33
@@ -50,16 +43,13 @@ EAR_T = 0.25
 EAR_FRAMES = 3
 MAR_T = 0.5
 GAZE_T = 2
-
 blink_count = 0
 mouth_count = 0
 suspicious_score = 0
 start_time = time.time()
 last_alert = dict.fromkeys(['faces','gaze','blink','mouth','hands'], 0)
 ALERT_CD = 3
-
-# Utility functions
-
+#Utility functions
 def save_event(frame, box, etype, desc):
     ts = time.strftime("%Y%m%d_%H%M%S")
     fn = f"{etype}_{ts}.jpg"
@@ -77,8 +67,6 @@ def save_event(frame, box, etype, desc):
             try: os.chmod(log_path, 0o666)
             except: pass
             time.sleep(0.1)
-
-
 def compute_EAR(lm, idxs, dims):
     h, w = dims
     pts = [(lm[i].x*w, lm[i].y*h) for i in idxs]
@@ -86,8 +74,6 @@ def compute_EAR(lm, idxs, dims):
     B = np.linalg.norm(np.array(pts[2]) - pts[4])
     C = np.linalg.norm(np.array(pts[0]) - pts[3])
     return (A+B)/(2*C) if C else 0
-
-
 def compute_MAR(lm, dims):
     h, w = dims
     up = np.array([lm[MOUTH_UP].x*w, lm[MOUTH_UP].y*h])
@@ -97,8 +83,7 @@ def compute_MAR(lm, dims):
     vertical = np.linalg.norm(up - down)
     horizontal = np.linalg.norm(left - right)
     return vertical/horizontal if horizontal else 0
-
-# ── Main Loop ──
+#Main Loop
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -109,7 +94,6 @@ while True:
     faces_res = face_mesh.process(rgb)
     hands_res = hands_detector.process(rgb)
     now = time.time()
-
     # Multiple faces detection
     if faces_res.multi_face_landmarks and len(faces_res.multi_face_landmarks) > 1:
         desc = f"Multiple faces detected: {len(faces_res.multi_face_landmarks)}"
